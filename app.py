@@ -38,15 +38,20 @@ def to_excel(df):
     output = BytesIO()
     df_copy = df.copy()
 
-    # Tambahkan kolom rata-rata pH
-    if not df_copy.empty:
-        avg_ph = df_copy["pH"].mean()
-        # Buat kolom baru dengan nilai rata-rata di baris pertama
-        df_copy["Rata-rata pH"] = ""
-        df_copy.loc[0, "Rata-rata pH"] = avg_ph
+    # Pastikan tanggal dalam format datetime
+    df_copy["Tanggal"] = pd.to_datetime(df_copy["Tanggal"])
+
+    # Hitung rata-rata per bulan
+    df_copy["Bulan"] = df_copy["Tanggal"].dt.to_period("M").astype(str)
+    monthly_avg = df_copy.groupby("Bulan")["pH"].mean().reset_index()
+    monthly_avg.rename(columns={"pH": "Rata-rata pH"}, inplace=True)
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        # Sheet 1: Data asli
         df_copy.to_excel(writer, index=False, sheet_name="Data")
+        # Sheet 2: Rata-rata per bulan
+        monthly_avg.to_excel(writer, index=False, sheet_name="Rata-rata Bulanan")
+
     return output.getvalue()
 
 excel_file = to_excel(st.session_state["data"])
@@ -59,5 +64,6 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 )
+
 
 
