@@ -1,88 +1,35 @@
-import streamlit as st
 import pandas as pd
-from io import BytesIO
+from openpyxl import load_workbook
 
-st.set_page_config(page_title="📊 Pencatatan pH dan Debit Air", layout="centered")
+# Baca data utama
+df = pd.read_excel("data_input.xlsx")  # ganti dengan file data kamu
 
-st.title("📊 Pencatatan pH dan Debit Air")
+# Pastikan Tanggal benar jadi datetime
+df["Tanggal"] = pd.to_datetime(df["Tanggal"]).dt.date  # hilangkan jam 00:00:00
 
-# ==========================
-# Fungsi Export ke Excel
-# ==========================
-def to_excel_per_lokasi(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        for lokasi, data_lokasi in df.groupby("Lokasi"):
-            if data_lokasi.empty:
-                continue
+# Buat file Excel output
+with pd.ExcelWriter("output_lokasi.xlsx", engine="openpyxl") as writer:
+    for lokasi, data_lokasi in df.groupby("Lokasi"):
+        # Urutkan berdasarkan tanggal
+        data_lokasi = data_lokasi.sort_values("Tanggal")
 
-            data_lokasi = data_lokasi.copy()
-            data_lokasi["Tanggal"] = pd.to_datetime(data_lokasi["Tanggal"])
+        # Hitung rata-rata pH bulanan
+        rata_ph = data_lokasi["ph"].mean()
 
-            # Ambil bulan pertama (anggap data dalam sheet 1 bulan)
-            bulan = data_lokasi["Tanggal"].dt.to_period("M").iloc[0]
+        # Buat salinan data harian
+        data_lokasi_out = data_lokasi[["Tanggal", "ph", "debit"]].copy()
+        data_lokasi_out["Rata-rata pH Bulan"] = ""
 
-            # Hitung rata-rata pH bulanan
-            rata_ph = data_lokasi["pH"].mean().round(2)
+        # Isi rata-rata hanya di baris terakhir
+        data_lokasi_out.loc[data_lokasi_out.index[-1], "Rata-rata pH Bulan"] = round(rata_ph, 2)
 
-            # Data harian
-            df_out = data_lokasi[["Tanggal", "pH", "Debit"]].copy()
+        # Tulis ke Excel mulai baris ke-2 (biar baris pertama bisa dipakai untuk judul lokasi)
+        data_lokasi_out.to_excel(writer, sheet_name=lokasi, index=False, startrow=2)
 
-            # Tambah kolom rata-rata pH
-            df_out["Rata-rata pH Bulan " + str(bulan)] = ""
-
-            # Tambahkan baris rata-rata di bawah
-            df_out.loc[len(df_out)] = ["", "", "", rata_ph]
-
-            # Simpan per lokasi ke sheet
-            df_out.to_excel(writer, sheet_name=str(lokasi), index=False)
-
-    return output.getvalue()
-
-
-# ==========================
-# Simpan Data di Session
-# ==========================
-if "data" not in st.session_state:
-    st.session_state["data"] = []
-
-# ==========================
-# Input Data
-# ==========================
-tanggal = st.date_input("Tanggal pengukuran:")
-lokasi = st.selectbox("Pilih lokasi:", ["Power Plant", "Plant Garage", "Drain A", "Drain B", "Drain C"])
-ph = st.number_input("Nilai pH:", min_value=0.0, step=0.01)
-debit = st.number_input("Nilai Debit:", min_value=0.0, step=0.01)
-
-if st.button("➕ Tambah Data"):
-    st.session_state["data"].append({
-        "Tanggal": tanggal,
-        "Lokasi": lokasi,
-        "pH": ph,
-        "Debit": debit
-    })
-    st.success("Data berhasil ditambahkan!")
-
-# ==========================
-# Tampilkan Data
-# ==========================
-if st.session_state["data"]:
-    df = pd.DataFrame(st.session_state["data"])
-    st.subheader("📋 Data Tercatat")
-    st.dataframe(df)
-
-    # ==========================
-    # Download Excel
-    # ==========================
-    st.subheader("💾 Export ke Excel")
-    excel_bytes = to_excel_per_lokasi(df)
-    st.download_button(
-        label="📥 Download Excel per Lokasi",
-        data=excel_bytes,
-        file_name="data_lokasi.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
+        # Tambahkan judul lokasi di baris pertama
+        ws = writer.sheets[lokasi]
+        ws.cell(row=1, column=1).value = f"Lokasi: {lokasi}"
+  
         
    
         
@@ -90,6 +37,7 @@ if st.session_state["data"]:
      
    
   
+
 
 
 
