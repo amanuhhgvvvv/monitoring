@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl import Workbook
 from io import BytesIO
 
 st.title("📊 Monitoring pH & Debit Air")
@@ -34,34 +36,44 @@ for loc, records in st.session_state.data.items():
         st.write(f"### {loc}")
         st.dataframe(pd.DataFrame(records))
 
-# Fungsi buat file Excel
+# Fungsi buat file Excel dengan nama lokasi di atas tabel
 def buat_file_excel(data_dict):
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        for loc, records in data_dict.items():
-            if not records:
-                continue
-            df = pd.DataFrame(records)
-            df["Tanggal"] = pd.to_datetime(df["Tanggal"])
+    wb = Workbook()
+    wb.remove(wb.active)  # hapus sheet default
 
-            # Hitung rata-rata pH
-            rata_ph = df["pH"].mean()
+    for loc, records in data_dict.items():
+        if not records:
+            continue
+        ws = wb.create_sheet(title=loc)
 
-            # Tambahkan kolom kosong rata-rata
-            df["Rata-rata pH"] = ""
+        df = pd.DataFrame(records)
+        df["Tanggal"] = pd.to_datetime(df["Tanggal"])
 
-            # Tambahkan baris rata-rata
-            total_row = {
-                "Tanggal": "TOTAL",
-                "pH": "",
-                "Debit": "",
-                "Rata-rata pH": round(rata_ph, 2)
-            }
-            df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
+        # Hitung rata-rata pH
+        rata_ph = df["pH"].mean()
 
-            # Simpan ke Excel
-            df.to_excel(writer, sheet_name=loc, index=False)
+        # Tambahkan kolom kosong rata-rata
+        df["Rata-rata pH"] = ""
 
+        # Tambahkan baris total
+        total_row = {
+            "Tanggal": "TOTAL",
+            "pH": "",
+            "Debit": "",
+            "Rata-rata pH": round(rata_ph, 2)
+        }
+        df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
+
+        # Tambahkan judul lokasi di baris pertama
+        ws.append([f"Lokasi: {loc}"])
+        ws.append([])  # baris kosong
+
+        # Tulis DataFrame ke sheet
+        for r in dataframe_to_rows(df, index=False, header=True):
+            ws.append(r)
+
+    wb.save(output)
     output.seek(0)
     return output
 
@@ -74,7 +86,13 @@ if st.button("Download Excel"):
         file_name="monitoring_ph_debit.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-        
+
+
+       
+
+
+   
+   
         
    
         
@@ -82,6 +100,7 @@ if st.button("Download Excel"):
      
    
   
+
 
 
 
