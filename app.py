@@ -34,6 +34,9 @@ if not st.session_state["data"].empty:
     st.metric("📌 Rata-rata pH", f"{avg_ph:.2f}")
 
 # Fungsi export ke Excel
+from io import bytesl0
+import pandas as pd
+
 def to_excel_per_lokasi(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
@@ -72,6 +75,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 )
+
 
 
 
