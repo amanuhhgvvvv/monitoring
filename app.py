@@ -37,20 +37,33 @@ if not st.session_state["data"].empty:
 def to_excel(df):
     output = BytesIO()
     df_copy = df.copy()
-
-    # Pastikan tanggal dalam format datetime
     df_copy["Tanggal"] = pd.to_datetime(df_copy["Tanggal"])
 
-    # Hitung rata-rata per bulan
-    df_copy["Bulan"] = df_copy["Tanggal"].dt.to_period("M").astype(str)
-    monthly_avg = df_copy.groupby("Bulan")["pH"].mean().reset_index()
-    monthly_avg.rename(columns={"pH": "Rata-rata pH"}, inplace=True)
-
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        # Sheet 1: Data asli
-        df_copy.to_excel(writer, index=False, sheet_name="Data")
-        # Sheet 2: Rata-rata per bulan
-        monthly_avg.to_excel(writer, index=False, sheet_name="Rata-rata Bulanan")
+        startrow = 0
+        sheet_name = "Data"
+        
+        for lokasi, data_lokasi in df_copy.groupby("Lokasi"):
+            # Hitung rata-rata pH lokasi ini
+            avg_ph = data_lokasi["pH"].mean()
+
+            # Tambahkan kolom rata-rata pH (isinya sama untuk semua baris lokasi ini)
+            export_df = data_lokasi[["Tanggal", "pH", "Debit (L/detik)"]].copy()
+            export_df["Rata-rata pH"] = avg_ph
+
+            # Tambahkan header lokasi (1 baris di atas tabel)
+            header_df = pd.DataFrame([[f"Lokasi: {lokasi}", "", "", ""]],
+                                      columns=export_df.columns)
+
+            # Gabungkan header + data
+            final_df = pd.concat([header_df, export_df], ignore_index=True)
+
+            # Tulis ke Excel di posisi yang sesuai
+            final_df.to_excel(writer, sheet_name=sheet_name,
+                              index=False, startrow=startrow)
+
+            # Geser startrow ke bawah untuk lokasi berikutnya
+            startrow += len(final_df) + 3  # kasih jarak 3 baris kosong
 
     return output.getvalue()
 
@@ -64,6 +77,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 )
+
 
 
 
