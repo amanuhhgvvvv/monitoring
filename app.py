@@ -44,15 +44,17 @@ def to_excel(df):
         sheet_name = "Data"
         
         for lokasi, data_lokasi in df_copy.groupby("Lokasi"):
-            # Hitung rata-rata pH lokasi ini
+            # Hitung rata-rata pH dan Debit lokasi ini
             avg_ph = data_lokasi["pH"].mean()
+            avg_debit = data_lokasi["Debit (L/detik)"].mean()
 
-            # Tambahkan kolom rata-rata pH (isinya sama untuk semua baris lokasi ini)
+            # Tambahkan kolom rata-rata
             export_df = data_lokasi[["Tanggal", "pH", "Debit (L/detik)"]].copy()
             export_df["Rata-rata pH"] = avg_ph
+            export_df["Rata-rata Debit"] = avg_debit
 
-            # Tambahkan header lokasi (1 baris di atas tabel)
-            header_df = pd.DataFrame([[f"Lokasi: {lokasi}", "", "", ""]],
+            # Tambahkan header lokasi
+            header_df = pd.DataFrame([[f"Lokasi: {lokasi}", "", "", "", ""]],
                                       columns=export_df.columns)
 
             # Gabungkan header + data
@@ -62,7 +64,7 @@ def to_excel(df):
             final_df.to_excel(writer, sheet_name=sheet_name,
                               index=False, startrow=startrow)
 
-            # Geser startrow ke bawah untuk lokasi berikutnya
+            # Geser startrow untuk lokasi berikutnya
             startrow += len(final_df) + 3  # kasih jarak 3 baris kosong
 
     return output.getvalue()
@@ -77,6 +79,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 )
+
 
 
 
