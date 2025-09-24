@@ -38,11 +38,12 @@ def to_excel(df):
     output = BytesIO()
     df_copy = df.copy()
 
-    # Tambahkan baris rata-rata pH
+    # Tambahkan kolom rata-rata pH
     if not df_copy.empty:
         avg_ph = df_copy["pH"].mean()
-        avg_row = pd.DataFrame([["", "Rata-rata", avg_ph, ""]], columns=df_copy.columns)
-        df_copy = pd.concat([df_copy, avg_row], ignore_index=True)
+        # buat kolom baru dengan nilai rata-rata di baris pertama
+        df_copy["rata-rata pH] = ""
+        df_copy.loc[0, "rata-rata pH] =avg_ph
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         df_copy.to_excel(writer, index=False, sheet_name="Data")
@@ -58,3 +59,4 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 )
+
