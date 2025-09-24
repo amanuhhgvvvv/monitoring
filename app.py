@@ -26,7 +26,7 @@ st.dataframe(st.session_state["data"])
 # --- Fungsi export ke Excel ---
 def to_excel_per_lokasi(df):
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
         for lokasi, data_lokasi in df.groupby("Lokasi"):
             data_lokasi = data_lokasi.copy()
             data_lokasi["Tanggal"] = pd.to_datetime(data_lokasi["Tanggal"])
@@ -65,6 +65,7 @@ if not st.session_state["data"].empty:
     
    
   
+
 
 
 
