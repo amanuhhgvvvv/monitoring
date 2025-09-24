@@ -82,10 +82,15 @@ if st.session_state["data"]:
         file_name="data_lokasi.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-          
+
         
    
+        
+
+     
+   
   
+
 
 
 
