@@ -12,7 +12,7 @@ st.title("📊 Pencatatan pH dan Debit Air")
 # Form input
 with st.form("input_form"):
     tanggal = st.date_input("Tanggal", datetime.today())
-    lokasi = st.selectbox("Lokasi", ["Tempat 1", "Tempat 2", "Tempat 3", "Tempat 4", "Tempat 5"])
+    lokasi = st.selectbox("Lokasi", ["power plan", "plan garage", "drain A", "drain B", "drain D"])
     ph = st.number_input("Nilai pH", min_value=0.0, max_value=14.0, step=0.1)
     debit = st.number_input("Debit (L/detik)", min_value=0.0, step=0.1)
 
@@ -56,4 +56,5 @@ st.download_button(
     data=excel_file,
     file_name="data_ph_debit.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
 )
