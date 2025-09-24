@@ -24,32 +24,35 @@ st.subheader("📑 Data Pencatatan")
 st.dataframe(st.session_state["data"])
 
 # --- Fungsi export ke Excel ---
-def to_excel_per_lokasi(df):
+
+           def to_excel_per_lokasi(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         for lokasi, data_lokasi in df.groupby("Lokasi"):
+            if data_lokasi.empty:
+                continue
+
             data_lokasi = data_lokasi.copy()
             data_lokasi["Tanggal"] = pd.to_datetime(data_lokasi["Tanggal"])
-            
-            # Tentukan bulan & rata-rata pH
+
+            # Ambil bulan pertama (anggap semua data 1 bulan)
             bulan = data_lokasi["Tanggal"].dt.to_period("M").iloc[0]
+
+            # Hitung rata-rata pH
             rata_ph = data_lokasi["pH"].mean().round(2)
-            
-            # Data harian
-            data_harian = data_lokasi[["Tanggal", "pH", "Debit"]]
-            
-            # Baris ringkasan rata-rata
-            summary = pd.DataFrame({
-                "Tanggal": [f"Rata-rata pH Bulan {bulan}"],
-                "pH": [rata_ph],
-                "Debit": [None]
-            })
-            
-            # Gabungkan
-            final_df = pd.concat([data_harian, summary], ignore_index=True)
-            
+
+            # Buat dataframe output
+            df_out = data_lokasi[["Tanggal", "pH", "Debit"]].copy()
+
+            # Tambah kolom kosong untuk rata-rata
+            df_out["Rata-rata pH Bulan " + str(bulan)] = ""
+
+            # Tambahkan baris rata-rata (hanya pH)
+            df_out.loc[len(df_out)] = ["", "", "", rata_ph]
+
             # Simpan ke sheet
-            final_df.to_excel(writer, sheet_name=lokasi, index=False)
+            df_out.to_excel(writer, sheet_name=str(lokasi), index=False)
+
     return output.getvalue()
 
 # --- Tombol download Excel ---
@@ -65,6 +68,7 @@ if not st.session_state["data"].empty:
     
    
   
+
 
 
 
