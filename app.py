@@ -1,80 +1,70 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 from io import BytesIO
-
-# Inisialisasi data
-if "data" not in st.session_state:
-    st.session_state["data"] = pd.DataFrame(columns=["Tanggal", "Lokasi", "pH", "Debit (L/detik)"])
 
 st.title("📊 Pencatatan pH dan Debit Air")
 
-# Form input
-with st.form("input_form"):
-    tanggal = st.date_input("Tanggal", datetime.today())
-    lokasi = st.selectbox("Lokasi", ["power plan", "plan garage", "drain A", "drain B", "drain D"])
-    ph = st.number_input("Nilai pH", min_value=0.0, max_value=14.0, step=0.1)
-    debit = st.number_input("Debit (L/detik)", min_value=0.0, step=0.1)
+# --- Inisialisasi session state ---
+if "data" not in st.session_state:
+    st.session_state["data"] = pd.DataFrame(columns=["Tanggal", "Lokasi", "pH", "Debit"])
 
-    submit = st.form_submit_button("Simpan Data")
+# --- Input data ---
+tanggal = st.date_input("Tanggal pengukuran:")
+lokasi = st.selectbox("Pilih lokasi:", ["Power Plant", "Plant Garage", "Drain A", "Drain B", "Drain C"])
+ph = st.number_input("Masukkan nilai pH:", min_value=0.0, step=0.1)
+debit = st.number_input("Masukkan debit (L/detik):", min_value=0.0, step=0.1)
 
-# Simpan data
-if submit:
-    new_data = pd.DataFrame([[tanggal, lokasi, ph, debit]], columns=st.session_state["data"].columns)
-    st.session_state["data"] = pd.concat([st.session_state["data"], new_data], ignore_index=True)
+if st.button("Simpan Data"):
+    new_row = pd.DataFrame({"Tanggal": [tanggal], "Lokasi": [lokasi], "pH": [ph], "Debit": [debit]})
+    st.session_state["data"] = pd.concat([st.session_state["data"], new_row], ignore_index=True)
     st.success("✅ Data berhasil disimpan!")
 
-# Tampilkan tabel
+# --- Tampilkan data ---
 st.subheader("📑 Data Pencatatan")
-st.dataframe(st.session_state["data"], use_container_width=True)
+st.dataframe(st.session_state["data"])
 
-# Hitung rata-rata pH
-if not st.session_state["data"].empty:
-    avg_ph = st.session_state["data"]["pH"].mean()
-    st.metric("📌 Rata-rata pH", f"{avg_ph:.2f}")
-
-# Fungsi export ke Excel
-from io import bytesl0
-import pandas as pd
-
+# --- Fungsi export ke Excel ---
 def to_excel_per_lokasi(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         for lokasi, data_lokasi in df.groupby("Lokasi"):
-            # Pastikan format tanggal
+            data_lokasi = data_lokasi.copy()
             data_lokasi["Tanggal"] = pd.to_datetime(data_lokasi["Tanggal"])
             
-            # Ambil bulan (anggap 1 bulan dalam sekali export)
+            # Tentukan bulan & rata-rata pH
             bulan = data_lokasi["Tanggal"].dt.to_period("M").iloc[0]
-            
-            # Hitung rata-rata pH bulanan
             rata_ph = data_lokasi["pH"].mean().round(2)
             
             # Data harian
-            data_harian = data_lokasi[["Tanggal", "pH", "Debit"]].copy()
+            data_harian = data_lokasi[["Tanggal", "pH", "Debit"]]
             
-            # Tambah baris ringkasan
+            # Baris ringkasan rata-rata
             summary = pd.DataFrame({
                 "Tanggal": [f"Rata-rata pH Bulan {bulan}"],
                 "pH": [rata_ph],
                 "Debit": [None]
             })
+            
+            # Gabungkan
             final_df = pd.concat([data_harian, summary], ignore_index=True)
             
-            # Simpan ke sheet sesuai nama lokasi
+            # Simpan ke sheet
             final_df.to_excel(writer, sheet_name=lokasi, index=False)
     return output.getvalue()
 
-excel_file = to_excel(st.session_state["data"])
+# --- Tombol download Excel ---
+if not st.session_state["data"].empty:
+    excel_file = to_excel_per_lokasi(st.session_state["data"])
+    st.download_button(
+        "⬇ Download Data Semua Lokasi",
+        data=excel_file,
+        file_name="pengukuran_semua_lokasi.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-# Tombol download
-st.download_button(
-    label="⬇ Download Excel",
-    data=excel_file,
-    file_name="data_ph_debit.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-
-)
+    
+   
+  
 
 
 
