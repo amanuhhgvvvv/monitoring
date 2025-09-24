@@ -87,21 +87,7 @@ if st.button("Download Excel"):
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-
-       
-
-
-   
-   
         
-   
-        
-
-     
-   
-  
-
-
 
 
 
