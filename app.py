@@ -36,7 +36,10 @@ if not st.session_state["data"].empty:
 # Fungsi export ke Excel
 def to_excel(df):
     output = BytesIO()
-    df_copy = df.copy()
+    with pd.excelwriter(output,engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=false, sheet_name="sheet1")
+    processed_data = output.getvalue()
+    return processed_data
     df_copy["Tanggal"] = pd.to_datetime(df_copy["Tanggal"])
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -79,6 +82,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 )
+
 
 
 
