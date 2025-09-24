@@ -29,7 +29,7 @@ def to_excel_per_lokasi(df):
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         for lokasi, data_lokasi in df.groupby("Lokasi"):
             data_lokasi = data_lokasi.copy()
-            data_lokasi["Tanggal"] = pd.to_datetime(data_lokasi["Tanggal"].dt.strftime("%Y-%m-%d")
+            data_lokasi["Tanggal"] = pd.to_datetime(data_lokasi["Tanggal"])
             
             # Tentukan bulan & rata-rata pH
             bulan = data_lokasi["Tanggal"].dt.to_period("M").iloc[0]
@@ -65,6 +65,7 @@ if not st.session_state["data"].empty:
     
    
   
+
 
 
 
